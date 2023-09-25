@@ -1,0 +1,53 @@
+version: "3"
+
+services:
+    app:
+        build:
+            args:
+                user: 1000
+                uid: 1000
+            context: .docker/php
+            dockerfile: DockerFile
+        working_dir: /var/www
+        restart: unless-stopped
+        volumes:
+            - ./:/var/www
+        networks:
+            - backend-bug
+
+    nginxphp:
+        image: nginx:alpine
+        restart: unless-stopped
+        ports:
+            - "8080:80"
+        working_dir: /var/www
+        volumes:
+            - ./:/var/www
+            - ./.docker/nginx/conf.d/:/etc/nginx/conf.d/
+        networks:
+            - backend-bug
+        depends_on:
+            - app
+
+    mysql:
+        image: mysql:8
+        restart: always
+        ports:
+            - "3306:3306"
+        volumes:
+            - mysql_data:/var/lib/mysql
+        environment:
+            MYSQL_ROOT_PASSWORD: "root123"
+            MYSQL_PASSWORD: "root"
+            MYSQL_USER: "user"
+            MYSQL_DATABASE: "bug"
+        networks:
+            - backend-bug
+
+
+volumes:
+    mysql_data:
+        driver: local
+networks:
+    backend-bug:
+        driver: bridge
